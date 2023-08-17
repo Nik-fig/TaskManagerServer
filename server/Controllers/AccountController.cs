@@ -21,12 +21,13 @@ namespace server.Controllers
         {
             _userManager = userManager;
         }
+        
 
-        [HttpGet]
         [AllowAnonymous]
+        [Route("login")]
         public async Task<IActionResult> Login(string? returnUrl)
         {
-            var url = "http://localhost:3000/login?" + returnUrl;
+            var url = "http://localhost:3000?" + returnUrl;
             //Редирект на страницу аторизации
             return Redirect(url);
         }

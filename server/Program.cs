@@ -13,6 +13,7 @@ builder.Configuration
 // Add services to the container.
 builder.Services.AddControllers();
 
+
 // Add authentication and 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -37,6 +38,10 @@ builder.Services
 
 
 var app = builder.Build();
+
+app.UseCors(
+    builder => builder.WithOrigins("http://localhost:3000")
+);
 
 using (var scope = app.Services.CreateScope())
 {
