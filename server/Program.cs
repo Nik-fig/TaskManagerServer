@@ -1,6 +1,6 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using server.DAL;
 using server.Models;
 
@@ -12,6 +12,11 @@ builder.Configuration
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Add authentication and 
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options => options.LoginPath = "/api/{controller=Account}/{action=login}");
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services
@@ -26,7 +31,7 @@ builder.Services
             builder.Configuration.GetConnectionString("DefaultConnection")
         );
     })
-    .AddTransient<IPasswordValidator<User>, AdminPasswordValidator>(serv => new AdminPasswordValidator())
+    .AddTransient<IPasswordValidator<User>, PasswordValidator>(serv => new PasswordValidator())
     .AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationContext>();
 
@@ -36,16 +41,17 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
     //Seeding the Db
     try
     {
         var userManager = services.GetRequiredService<UserManager<User>>();
         var rolesManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        await RoleInitializer.InitializeAsync(userManager, rolesManager);
+        await DbDataInitializer.InitializeAsync(userManager, rolesManager, logger);
     }
     catch (Exception e)
     {
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
         logger.LogError(e, "An error occurred while seeding the database.");
     }
 }
@@ -58,7 +64,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseAuthorization();
+app.UseAuthentication();
 app.UseAuthentication();
 
 app.MapControllers();
